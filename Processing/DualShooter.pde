@@ -428,6 +428,12 @@ void setup() {
     stars.add(new Star());
   }
   
+  // Inicializar listas vacías para evitar null
+  bullets = new ArrayList<Bullet>();
+  enemies = new ArrayList<Enemy>();
+  explosions = new ArrayList<Explosion>();
+  particles = new ArrayList<Particle>();
+  
   // Intentar conectar FPGA
   if (useFPGA) {
     try {
@@ -441,7 +447,14 @@ void setup() {
     }
   }
   
-  initGame();
+  // Empezar en MENU (NO llamar initGame aquí)
+  state = GameState.MENU;
+  
+  // Inicializar posición del jugador para el MENU
+  playerX = SCREEN_W / 2;
+  playerY = SCREEN_H / 2;
+  playerTargetY = playerY;
+  playerMaxY = SCREEN_H - 100;
 }
 
 void initGame() {
@@ -463,6 +476,7 @@ void initGame() {
   enemySpeed = 4;
   spawnInterval = 1200;
   
+  // Ahora sí cambia a RUNNING
   state = GameState.RUNNING;
 }
 
@@ -520,12 +534,17 @@ void readFPGAInput() {
       gotMovement = true;
     }
     
-    // Disparos inmediatos
+    // Disparos inmediatos (solo si está jugando)
     if (cmd == 'L' && state == GameState.RUNNING) {
       shootLeft();
     }
     if (cmd == 'R' && state == GameState.RUNNING) {
       shootRight();
+    }
+    
+    // START/PAUSE con KEY[1] de la FPGA
+    if (cmd == 'S') {
+      handleStartPause();
     }
   }
   
@@ -544,6 +563,23 @@ void readFPGAInput() {
   if (millis() - fpgaLastCmdTime > 40) {  // Timeout aún más corto
     fpgaUp = false;
     fpgaDown = false;
+  }
+}
+
+// Función para manejar START/PAUSE desde FPGA o teclado
+void handleStartPause() {
+  if (state == GameState.MENU) {
+    // Iniciar juego desde el menú
+    initGame();
+  } else if (state == GameState.RUNNING) {
+    // Pausar juego
+    state = GameState.PAUSED;
+  } else if (state == GameState.PAUSED) {
+    // Reanudar juego
+    state = GameState.RUNNING;
+  } else if (state == GameState.GAME_OVER) {
+    // Reiniciar desde Game Over
+    initGame();
   }
 }
 
@@ -964,12 +1000,142 @@ void drawHUD() {
   fill(80);
   textSize(12);
   String instructions = useFPGA ? 
-    "TILT = Move | SW[0] = Left | SW[1] = Right | P = Pause" :
-    "W/S = Move | A = Left | D = Right | P = Pause";
+    "TILT = Move | SW[0] = Left | SW[1] = Right | KEY[1] = Start/Pause" :
+    "W/S = Move | A = Left | D = Right | ENTER = Start | P = Pause";
   text(instructions, SCREEN_W/2, SCREEN_H - 15);
 }
 
 void drawOverlay() {
+  // ============ PANTALLA DE MENU/INICIO ============
+  if (state == GameState.MENU) {
+    float time = millis() * 0.001;
+    
+    // ===== FONDO ESPACIAL =====
+    background(8, 8, 20);
+    
+    // Estrellas con parpadeo suave
+    for (Star s : stars) {
+      float twinkle = 0.7 + 0.3 * sin(time * 2 + s.x * 0.01);
+      fill(255, 255, 255, s.brightness * twinkle);
+      noStroke();
+      ellipse(s.x, s.y, s.size, s.size);
+    }
+    
+    // ===== NAVE GRANDE ARRIBA =====
+    pushMatrix();
+    float shipX = SCREEN_W / 2;
+    float shipY = SCREEN_H * 0.18 + sin(time * 1.2) * 12;
+    translate(shipX, shipY);
+    rotate(sin(time * 0.5) * 0.05);
+    scale(3.5);
+    
+    // Thruster
+    fill(PLAYER_COLOR, 80 + sin(time * 12) * 40);
+    ellipse(0, 28, 30, 50);
+    
+    // Nave
+    fill(PLAYER_COLOR);
+    beginShape();
+    vertex(0, -30);
+    vertex(-25, 18);
+    vertex(-10, 12);
+    vertex(0, 25);
+    vertex(10, 12);
+    vertex(25, 18);
+    endShape(CLOSE);
+    
+    // Cabina
+    fill(255);
+    ellipse(0, -8, 14, 14);
+    fill(ACCENT_COLOR);
+    ellipse(0, -8, 8, 8);
+    popMatrix();
+    
+    // ===== TÍTULO =====
+    textAlign(CENTER, CENTER);
+    float titleY = SCREEN_H * 0.42;
+    
+    // Sombra del título
+    fill(0, 0, 0, 80);
+    textSize(80);
+    text("DUAL SHOOTER", SCREEN_W/2 + 4, titleY + 4);
+    
+    // Título principal
+    fill(PLAYER_COLOR);
+    textSize(80);
+    text("DUAL SHOOTER", SCREEN_W/2, titleY);
+    
+    // Subtítulo
+    fill(ACCENT_COLOR, 180);
+    textSize(20);
+    text("FPGA Accelerometer Control", SCREEN_W/2, titleY + 55);
+    
+    // ===== MENSAJE START (CENTRO) =====
+    float startY = SCREEN_H * 0.62;
+    float pulse = (sin(time * 4) + 1) / 2;
+    
+    // Caja detrás del mensaje
+    fill(15, 15, 35, 200);
+    rectMode(CENTER);
+    rect(SCREEN_W/2, startY, 500, 70, 15);
+    
+    // Borde animado
+    stroke(PLAYER_COLOR, 100 + pulse * 100);
+    strokeWeight(2);
+    noFill();
+    rect(SCREEN_W/2, startY, 500, 70, 15);
+    noStroke();
+    rectMode(CORNER);
+    
+    // Texto START
+    String startMsg = useFPGA ? "PRESS  KEY[1]  TO  START" : "PRESS  ENTER  TO  START";
+    fill(255, 180 + pulse * 75);
+    textSize(28 + pulse * 3);
+    text(startMsg, SCREEN_W/2, startY);
+    
+    // ===== CONTROLES (ABAJO) =====
+    float ctrlY = SCREEN_H * 0.78;
+    
+    fill(120);
+    textSize(14);
+    if (useFPGA) {
+      text("TILT  =  Move     |     SW[0]  =  Shoot Left     |     SW[1]  =  Shoot Right", SCREEN_W/2, ctrlY);
+    } else {
+      text("W / S  =  Move     |     A  =  Shoot Left     |     D  =  Shoot Right", SCREEN_W/2, ctrlY);
+    }
+    
+    // ===== STATUS FPGA =====
+    float statusY = SCREEN_H - 80;
+    
+    if (useFPGA) {
+      // Indicador verde pulsante
+      float indicatorPulse = (sin(time * 6) + 1) / 2;
+      fill(50, 255, 120, 150 + indicatorPulse * 105);
+      ellipse(SCREEN_W/2 - 90, statusY, 12, 12);
+      
+      fill(50, 255, 120);
+      textSize(16);
+      text("FPGA CONNECTED", SCREEN_W/2, statusY);
+    } else {
+      fill(255, 200, 80);
+      textSize(16);
+      text("KEYBOARD MODE", SCREEN_W/2, statusY);
+    }
+    
+    // ===== HIGH SCORE =====
+    if (highScore > 0) {
+      fill(ACCENT_COLOR);
+      textSize(16);
+      text("HIGH SCORE:  " + nfc(highScore), SCREEN_W/2, statusY + 30);
+    }
+    
+    // ===== CRÉDITOS =====
+    fill(60);
+    textSize(11);
+    text("Diseño de Lógica Programable  •  Tecnológico de Monterrey", SCREEN_W/2, SCREEN_H - 30);
+  }
+  
+  // ============ PAUSA ============
   if (state == GameState.PAUSED) {
     // Dim background
     fill(0, 0, 0, 180);
@@ -997,9 +1163,11 @@ void drawOverlay() {
     
     fill(TEXT_COLOR);
     textSize(20);
-    text("Press 'P' to continue", SCREEN_W/2, SCREEN_H/2 + 40);
+    String continueMsg = useFPGA ? "Press KEY[1] to continue" : "Press 'P' to continue";
+    text(continueMsg, SCREEN_W/2, SCREEN_H/2 + 40);
   }
   
+  // ============ GAME OVER ============
   if (state == GameState.GAME_OVER) {
     // Red tint
     fill(80, 0, 0, 200);
@@ -1047,7 +1215,8 @@ void drawOverlay() {
     // Restart
     fill(180);
     textSize(18);
-    text("Press 'R' to restart", SCREEN_W/2, SCREEN_H/2 + 110);
+    String restartMsg = useFPGA ? "Press KEY[1] to restart" : "Press 'R' to restart";
+    text(restartMsg, SCREEN_W/2, SCREEN_H/2 + 110);
   }
 }
 
@@ -1068,7 +1237,10 @@ void keyPressed() {
     keyRightPressed = true;
   }
   
-  // Pausa
+  // START/PAUSE con ENTER o P
+  if (key == ENTER || key == RETURN) {
+    handleStartPause();
+  }
   if (key == 'p' || key == 'P') {
     if (state == GameState.RUNNING) {
       state = GameState.PAUSED;
@@ -1077,9 +1249,9 @@ void keyPressed() {
     }
   }
   
-  // Reiniciar
+  // Reiniciar con R
   if (key == 'r' || key == 'R') {
-    if (state == GameState.GAME_OVER) {
+    if (state == GameState.GAME_OVER || state == GameState.MENU) {
       initGame();
     }
   }
