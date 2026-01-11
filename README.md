@@ -14,8 +14,7 @@
 *Tecnológico de Monterrey*
 
 **Autor:** Alfonso Solis Diaz  
-**Matrícula:** A00838034  
-**Profesor:** Roberto Mora
+
 
 ---
 
