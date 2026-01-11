@@ -1,0 +1,95 @@
+# ============================================
+# .gitignore para proyecto FPGA + Processing
+# ============================================
+
+# ============ QUARTUS ============
+# Archivos de compilación
+db/
+incremental_db/
+output_files/
+simulation/
+*.rpt
+*.done
+*.summary
+*.smsg
+*.pin
+*.jdi
+*.sld
+*.pof
+*.sof
+*.jic
+*.map
+*.fit
+*.asm
+*.sta
+*.flow
+*.qws
+
+# Archivos temporales de Quartus
+*.bak
+*.qpf.bak
+*.qsf.bak
+
+# ============ VHDL ============
+work/
+*.vho
+*.vcd
+*.wlf
+
+# ============ PROCESSING ============
+# Archivos generados
+*.class
+applet/
+application.linux*/
+application.macos*/
+application.windows*/
+
+# ============ LATEX ============
+# Archivos auxiliares de compilación
+*.aux
+*.log
+*.toc
+*.out
+*.lof
+*.lot
+*.fls
+*.fdb_latexmk
+*.synctex.gz
+*.synctex(busy)
+*.blg
+*.bbl
+*.nav
+*.snm
+*.vrb
+
+# ============ SISTEMA ============
+# Windows
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# ============ IDE ============
+# VS Code
+.vscode/
+
+# IntelliJ
+.idea/
+*.iml
+
+# ============ TEMPORAL ============
+*.tmp
+*.temp
+*.swp
+*~
+
+# ============ IGNORAR ARCHIVOS GRANDES ============
+# (SOF y POF son archivos de programación, pueden ser grandes)
+# Descomenta si quieres ignorarlos:
+# *.sof
+# *.pof
