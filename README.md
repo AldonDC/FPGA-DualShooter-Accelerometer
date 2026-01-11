@@ -264,12 +264,8 @@ FPGA-DualShooter-Accelerometer/
 │   ├── clock_div.vhd                 # Divisor de frecuencia
 │   └── decoder7seg.vhd               # Decodificador 7-seg
 │
-├── 📂 DualShooter/
+├── 📂 Processing/
 │   └── DualShooter.pde               # Juego en Processing
-│
-├── 📂 Documentacion/
-│   ├── documentacion_proyecto.tex    # Documentación LaTeX
-│   └── imagenes/                     # Imágenes para documentación
 │
 ├── .gitignore
 └── README.md
