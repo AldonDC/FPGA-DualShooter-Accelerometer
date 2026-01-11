@@ -14,7 +14,8 @@
 *Tecnológico de Monterrey*
 
 **Autor:** Alfonso Solis Diaz  
-
+**Matrícula:** A00838034  
+**Profesor:** Roberto Mora
 
 ---
 
@@ -123,11 +124,12 @@ Para utilizar el Arduino como adaptador USB-Serial:
 | Señal VHDL | Pin | I/O Standard | Descripción |
 |------------|-----|--------------|-------------|
 | clk | PIN_P11 | 3.3-V LVTTL | Clock 50 MHz |
-| reset_n | PIN_B8 | 3.3V Schmitt | KEY[0] |
+| reset_n | PIN_B8 | 3.3V Schmitt | KEY[0] (Reset) |
+| key1 | PIN_A7 | 3.3V Schmitt | KEY[1] (START/PAUSE) |
 | sw[0] | PIN_C10 | 3.3-V LVTTL | Switch 0 (Disparo Izq) |
 | sw[1] | PIN_C11 | 3.3-V LVTTL | Switch 1 (Disparo Der) |
 | uart_tx | PIN_AB6 | 3.3-V LVTTL | UART TX |
-| ledr[0-4] | PIN_A8... | 3.3-V LVTTL | LEDs indicadores |
+| ledr[0-5] | PIN_A8... | 3.3-V LVTTL | LEDs indicadores |
 
 ---
 
@@ -160,6 +162,7 @@ constant CMD_UP    : std_logic_vector(7 downto 0) := x"55";  -- 'U'
 constant CMD_DOWN  : std_logic_vector(7 downto 0) := x"44";  -- 'D'
 constant CMD_LEFT  : std_logic_vector(7 downto 0) := x"4C";  -- 'L'
 constant CMD_RIGHT : std_logic_vector(7 downto 0) := x"52";  -- 'R'
+constant CMD_START : std_logic_vector(7 downto 0) := x"53";  -- 'S' (START/PAUSE)
 ```
 
 ### Parámetros Optimizados
@@ -195,11 +198,19 @@ El ADXL345 utiliza **SPI Modo 3**:
 
 ### Características
 
+**Pantalla de Inicio:**
+- Menú principal con nave animada flotando
+- Fondo de estrellas con parpadeo suave
+- Mensaje "Press KEY[1] to START" parpadeante
+- Indicador de estado FPGA (conectada/desconectada)
+- Presionar KEY[1] inicia el juego
+
 **Mecánicas de juego:**
 - Mover la nave verticalmente usando el acelerómetro
 - Disparar a enemigos que vienen de ambos lados
 - Sistema de combo: disparos consecutivos multiplican el puntaje
 - Niveles progresivos con dificultad incrementada
+- Pausar con KEY[1] durante el juego
 
 **Características visuales (estilo cyberpunk):**
 - Pantalla completa con fondo de estrellas animadas
@@ -231,14 +242,27 @@ while (fpgaSerial.available() > 0) {
 
 ## 🎯 Controles
 
+### Controles FPGA
+
 | Entrada | Comando UART | Acción |
 |---------|--------------|--------|
 | Inclinar hacia ti | `U` | Mover nave arriba |
 | Inclinar lejos | `D` | Mover nave abajo |
 | Switch SW[0] | `L` | Disparar izquierda |
 | Switch SW[1] | `R` | Disparar derecha |
-| Tecla P | - | Pausar juego |
-| Tecla R | - | Reiniciar juego |
+| **KEY[1]** | `S` | **START / PAUSE / Reanudar** |
+| KEY[0] | - | Reset del sistema |
+
+### Controles Teclado (alternativo)
+
+| Tecla | Acción |
+|-------|--------|
+| W / S | Mover arriba / abajo |
+| A | Disparar izquierda |
+| D | Disparar derecha |
+| ENTER | Iniciar / Pausar |
+| P | Pausar |
+| R | Reiniciar |
 
 ### Indicadores LED
 
@@ -249,6 +273,7 @@ while (fpgaSerial.available() > 0) {
 | LEDR[2] | Inclinación hacia arriba detectada |
 | LEDR[3] | Inclinación hacia abajo detectada |
 | LEDR[4] | Transmisión UART activa |
+| LEDR[5] | KEY[1] presionado (START/PAUSE) |
 
 ---
 
