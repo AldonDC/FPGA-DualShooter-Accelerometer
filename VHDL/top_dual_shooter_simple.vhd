@@ -7,6 +7,7 @@
 -- COMPORTAMIENTO:
 --   SW[0] = Envía 'L' mientras está activo (disparo izquierdo)
 --   SW[1] = Envía 'R' mientras está activo (disparo derecho)
+--   KEY[1] = Envía 'S' al presionar (START/PAUSE)
 --   Posición horizontal = No envía nada
 --   Inclinar hacia ti = Envía 'U' (mover arriba)
 --   Inclinar lejos = Envía 'D' (mover abajo)
@@ -17,6 +18,7 @@
 --   LEDR[2] = Inclinación ARRIBA
 --   LEDR[3] = Inclinación ABAJO
 --   LEDR[4] = TX activo
+--   LEDR[5] = KEY[1] presionado (START)
 --
 -- Usa los componentes del repositorio bjohnsonfl/SPI_Accelerometer
 --
@@ -29,10 +31,11 @@ use ieee.numeric_std.all;
 entity top_dual_shooter_simple is
     port (
         clk          : in  std_logic;                      -- PIN_P11
-        reset_n      : in  std_logic;                      -- PIN_B8
+        reset_n      : in  std_logic;                      -- PIN_B8 (KEY[0])
+        key1         : in  std_logic;                      -- PIN_A7 (KEY[1] - START/PAUSE)
         sw           : in  std_logic_vector(1 downto 0);   -- PIN_C10, PIN_C11
         uart_tx      : out std_logic;                      -- PIN_AB6
-        ledr         : out std_logic_vector(4 downto 0);   -- LEDs
+        ledr         : out std_logic_vector(5 downto 0);   -- LEDs (ahora 6)
         -- Acelerómetro ADXL345
         GSENSOR_CS_N : out std_logic;                      -- PIN_AB16
         GSENSOR_SCLK : out std_logic;                      -- PIN_AB15
@@ -71,6 +74,14 @@ architecture rtl of top_dual_shooter_simple is
     constant CMD_DOWN  : std_logic_vector(7 downto 0) := x"44";  -- 'D'
     constant CMD_LEFT  : std_logic_vector(7 downto 0) := x"4C";  -- 'L'
     constant CMD_RIGHT : std_logic_vector(7 downto 0) := x"52";  -- 'R'
+    constant CMD_START : std_logic_vector(7 downto 0) := x"53";  -- 'S' (START/PAUSE)
+    
+    -- KEY[1] debounce y detección de flanco
+    signal key1_sync : std_logic_vector(2 downto 0) := "111";  -- Sincronizador
+    signal key1_stable : std_logic := '1';
+    signal key1_prev : std_logic := '1';
+    signal key1_pressed : std_logic := '0';  -- Pulso cuando se presiona
+    signal key1_db_cnt : integer range 0 to DEBOUNCE_LIMIT := 0;
     
     -- LED TX visible
     signal led_tx : std_logic := '0';
@@ -123,6 +134,7 @@ begin
     ledr(2) <= move_up;
     ledr(3) <= move_down;
     ledr(4) <= led_tx;
+    ledr(5) <= not key1_stable;  -- KEY[1] presionado (active low)
     
     -- Extraer eje Y de los datos del acelerómetro
     -- Formato: XL(7:0), XH(15:8), YL(23:16), YH(31:24), ZL(39:32), ZH(47:40)
@@ -237,6 +249,44 @@ begin
     end process;
     
     ----------------------------------------------------------------------------
+    -- Debouncer y detección de flanco para KEY[1] (START/PAUSE)
+    -- KEY[1] es active low (0 cuando presionado)
+    ----------------------------------------------------------------------------
+    process(clk, reset_n)
+    begin
+        if reset_n = '0' then
+            key1_sync <= "111";
+            key1_stable <= '1';
+            key1_prev <= '1';
+            key1_pressed <= '0';
+            key1_db_cnt <= 0;
+        elsif rising_edge(clk) then
+            -- Sincronizar entrada (anti-metaestabilidad)
+            key1_sync <= key1_sync(1 downto 0) & key1;
+            
+            -- Debounce
+            if key1_sync(2) = key1_stable then
+                key1_db_cnt <= 0;
+            else
+                if key1_db_cnt < DEBOUNCE_LIMIT then
+                    key1_db_cnt <= key1_db_cnt + 1;
+                else
+                    key1_stable <= key1_sync(2);
+                    key1_db_cnt <= 0;
+                end if;
+            end if;
+            
+            -- Detección de flanco negativo (KEY presionado = 0)
+            key1_prev <= key1_stable;
+            if key1_prev = '1' and key1_stable = '0' then
+                key1_pressed <= '1';  -- Pulso de un ciclo
+            else
+                key1_pressed <= '0';
+            end if;
+        end if;
+    end process;
+    
+    ----------------------------------------------------------------------------
     -- Timer y selección de comandos
     ----------------------------------------------------------------------------
     process(clk, reset_n)
@@ -249,7 +299,11 @@ begin
         elsif rising_edge(clk) then
             has_cmd <= '0';
             
-            if send_timer < SEND_INTERVAL then
+            -- PRIORIDAD: KEY[1] (START/PAUSE) - envío inmediato
+            if key1_pressed = '1' and uart_busy = '0' then
+                pending_cmd <= CMD_START;
+                has_cmd <= '1';
+            elsif send_timer < SEND_INTERVAL then
                 send_timer <= send_timer + 1;
             else
                 send_timer <= 0;
