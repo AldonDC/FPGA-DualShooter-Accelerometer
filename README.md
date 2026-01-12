@@ -46,7 +46,7 @@ El proyecto demuestra la integración de:
 
 ---
 
-## �🎯 Objetivos del Proyecto
+## 🎯 Objetivos del Proyecto
 
 - Diseñar e implementar un controlador de videojuego utilizando una FPGA
 - Demostrar conocimientos en:
@@ -344,7 +344,7 @@ FPGA-DualShooter-Accelerometer/
 
 ---
 
-## � Solución de Problemas
+##  Solución de Problemas
 
 | Problema | Solución |
 |----------|----------|
