@@ -44,7 +44,7 @@ El proyecto demuestra la integración de:
 
 ---
 
-## �🎯 Objetivos del Proyecto
+## 🎯 Objetivos del Proyecto
 
 - Diseñar e implementar un controlador de videojuego utilizando una FPGA
 - Demostrar conocimientos en:
@@ -365,7 +365,7 @@ FPGA-DualShooter-Accelerometer/
 
 ---
 
-## � Referencias
+##  Referencias
 
 1. Intel Corporation. "DE10-Lite User Manual". Terasic Technologies.
 2. Analog Devices. "ADXL345 Digital Accelerometer Datasheet".
