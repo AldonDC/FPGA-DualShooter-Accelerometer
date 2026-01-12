@@ -36,15 +36,17 @@ El proyecto demuestra la integración de:
 
 <div align="center">
 
-![Demo del Juego](demostracion_juegpFPGA.gif)
+### ▶️ Click en el GIF para ver el video completo
 
-*Demostración del juego controlado con la FPGA*
+[![Video Demo](demostracion_juegpFPGA.gif)](demostracion_juegpFPGA.mp4)
+
+**[📹 Ver Video Completo (MP4)](demostracion_juegpFPGA.mp4)**
 
 </div>
 
 ---
 
-## 🎯 Objetivos del Proyecto
+## �🎯 Objetivos del Proyecto
 
 - Diseñar e implementar un controlador de videojuego utilizando una FPGA
 - Demostrar conocimientos en:
@@ -365,7 +367,7 @@ FPGA-DualShooter-Accelerometer/
 
 ---
 
-##  Referencias
+## Referencias
 
 1. Intel Corporation. "DE10-Lite User Manual". Terasic Technologies.
 2. Analog Devices. "ADXL345 Digital Accelerometer Datasheet".
