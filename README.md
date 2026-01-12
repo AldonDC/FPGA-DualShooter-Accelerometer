@@ -32,7 +32,19 @@ El proyecto demuestra la integración de:
 
 ---
 
-## 🎯 Objetivos del Proyecto
+## 🎬 Video Demostrativo
+
+<div align="center">
+
+![Demo del Juego](demostracion_juegpFPGA.gif)
+
+*Demostración del juego controlado con la FPGA*
+
+</div>
+
+---
+
+## �🎯 Objetivos del Proyecto
 
 - Diseñar e implementar un controlador de videojuego utilizando una FPGA
 - Demostrar conocimientos en:
